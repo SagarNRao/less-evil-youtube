@@ -9,11 +9,24 @@ interface Video {
   link: string;
 }
 
+interface VidSearch {
+  snippet: {
+    title: string | undefined;
+  };
+  id: {
+    videoId: string | undefined;
+  };
+  finalID: string;
+  finalTitle: string;
+}
+
 interface AppContextProps {
-  YTSearchResults: Video[];
-  setYTSearchResults: (value: Video[]) => void;
+  YTSearchResults: VidSearch[];
+  setYTSearchResults: (value: VidSearch[]) => void;
   searchKey: string;
   setSearchKey: (value: string) => void;
+  detailsResults: Video[];
+  setdetailsResults: (value: Video[]) => void;
 }
 
 export const AppContext = createContext<AppContextProps | undefined>(undefined);
@@ -21,7 +34,8 @@ export const AppContext = createContext<AppContextProps | undefined>(undefined);
 export const AppProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [YTSearchResults, setYTSearchResults] = useState<Video[]>([]);
+  const [YTSearchResults, setYTSearchResults] = useState<VidSearch[]>([]);
+  const [detailsResults, setdetailsResults] = useState<Video[]>([]);
   const [searchKey, setSearchKey] = useState("");
 
   return (
@@ -30,8 +44,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
         YTSearchResults,
         setYTSearchResults,
         searchKey,
-        setSearchKey
+        setSearchKey,
+        detailsResults,
+        setdetailsResults
       }}
-    ></AppContext.Provider>
+    >
+      {children}
+    </AppContext.Provider>
   );
 };
