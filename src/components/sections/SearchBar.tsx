@@ -42,6 +42,16 @@ const SearchBar: React.FC = () => {
     setdetailsResults,
   } = context;
 
+  const fixSearchKey = (key: string) => {
+    let hereString = key.split(" ");
+    let newString = "";
+    hereString.map((word) => {
+      newString + word;
+    });
+    console.log(searchKey, " as opposed to ", newString)
+    setSearchKey(newString as string);
+  };
+
   async function getVideoDetails(videoId: string): Promise<Video> {
     const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${videoId}&key=${YoutubeAPIKey}`;
 
@@ -63,6 +73,7 @@ const SearchBar: React.FC = () => {
   }
 
   const Search = async () => {
+    fixSearchKey(searchKey)
     const response = await axios.get(
       `https://www.googleapis.com/youtube/v3/search?key=${YoutubeAPIKey}&q=${searchKey}&part=snippet`
     );
@@ -105,8 +116,6 @@ const SearchBar: React.FC = () => {
 
     setdetailsResults(VideoDeetsArr);
     console.log(detailsResults);
-
-    
   };
 
   useEffect(() => {

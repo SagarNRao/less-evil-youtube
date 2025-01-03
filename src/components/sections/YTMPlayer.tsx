@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import ReactPlayer from "react-player";
 import { useState, useContext } from "react";
 import { AppContext } from "@/app/AppContext";
+import Link from "next/link";
 
 interface YTMProps {
   url: string;
@@ -13,6 +14,7 @@ interface YTMProps {
 
 const YTMPlayer: React.FC<YTMProps> = ({ url, Name }) => {
   const [playing, setPlaying] = useState<boolean>(false);
+
   return (
     <Card className="flex">
       <div>
@@ -26,12 +28,18 @@ const YTMPlayer: React.FC<YTMProps> = ({ url, Name }) => {
       <div>
         <CardContent className="text-2xl">{Name}</CardContent>
         {playing == false ? (
-          <Button
-            onClick={() => {
-              setPlaying(true);
-            }}
-          >
-            Play
+          <Button>
+            <Link
+              href={{
+                pathname: "/Player",
+                query: {
+                  url: url,
+                  name: Name,
+                },
+              }}
+            >
+              Play
+            </Link>
           </Button>
         ) : (
           <Button
