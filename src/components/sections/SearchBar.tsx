@@ -14,6 +14,7 @@ interface VidSearch {
   };
   finalID: string;
   finalTitle: string;
+  distracting: boolean;
 }
 
 interface Video {
@@ -61,7 +62,45 @@ const SearchBar: React.FC = () => {
       }
     );
 
+    vidSearchArr.forEach(async (item) => {
+      await Promise.all(
+        vidSearchArr.map(async (item) => {
+          try {
+            const response = await axios.post(
+              `http://localhost:5000/model`,
+              { videoID: item.finalID },
+              {
+                headers: {
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+            console.log(response.data);
+
+            switch (response.data.message) {
+              case true:
+                console.log("not coolio beans bro");
+                item.distracting = true;
+                break;
+              case false:
+                console.log("coolio beans");
+                item.distracting = false;
+                break;
+              default:
+                console.log("Unexpected response data");
+            }
+          } catch (error) {
+            console.error(
+              "Error in checking if video was distracting or not: ",
+              error
+            );
+          }
+        })
+      );
+    });
+
     setSearchResults(vidSearchArr);
+    console.log(searchResults);
   };
 
   return (

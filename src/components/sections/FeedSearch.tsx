@@ -21,6 +21,7 @@ interface VidSearch {
   };
   finalID: string;
   finalTitle: string;
+  distracting: boolean;
 }
 
 interface Video {
@@ -39,20 +40,31 @@ const FeedSearch: React.FC = () => {
 
   const { searchResults, setSearchResults } = context;
 
+  useEffect(() => {
+    // This effect will run every time searchResults changes
+  }, [searchResults]);
+
   return (
     <>
       {searchResults && searchResults.length > 0 ? (
         searchResults.map((result: VidSearch, index: number) => (
           <div className="flex flex-col" key={index}>
-            <Card key={index} className="">
-              <CardHeader>
-                <CardTitle>{result.snippet.title}</CardTitle>
-              </CardHeader>
-              <CardContent>here</CardContent>
-              <CardFooter>
-                <CardDescription>Video ID: {result.finalID}</CardDescription>
-              </CardFooter>
-            </Card>
+            { result.distracting == false ? (
+              <>
+                <Card>
+                  <CardContent>
+                    <YTMPlayer
+                      url={
+                        `https://www.youtube.com/watch?v=${result.finalID}` as string
+                      }
+                      Name={result.finalTitle as string}
+                    />
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <p>This video is marked as distracting.</p>
+            )}
           </div>
         ))
       ) : (
