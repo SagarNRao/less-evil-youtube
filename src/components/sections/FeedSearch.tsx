@@ -38,10 +38,12 @@ const FeedSearch: React.FC = () => {
     throw new Error("AppContext must be used within an AppProvider");
   }
 
-  const { searchResults, setSearchResults } = context;
+  const { searchResults, setSearchResults, searchTrigger, setSearchTrigger } =
+    context;
 
   useEffect(() => {
-    // This effect will run every time searchResults changes
+    // This effect will run every time searchTrigger changes
+    console.log("FeedSearch re-rendered due to searchTrigger change");
   }, [searchResults]);
 
   return (
@@ -49,7 +51,7 @@ const FeedSearch: React.FC = () => {
       {searchResults && searchResults.length > 0 ? (
         searchResults.map((result: VidSearch, index: number) => (
           <div className="flex flex-col" key={index}>
-            { result.distracting == false ? (
+            {result.distracting == false ? (
               <>
                 <Card>
                   <CardContent>

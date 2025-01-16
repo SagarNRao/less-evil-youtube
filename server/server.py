@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import sys
 
 app = Flask(__name__)
 CORS(app)
@@ -9,7 +10,11 @@ CORS(app)
 def review():
     data = request.get_json()
     # return jsonify({"message": True})
-    return jsonify({"message":False})
+    return jsonify({"message": False})
+
+    # True if distracting
+    # False if not distracting
+
     # hardcoded for testing purposes will use an ML model
 
 
