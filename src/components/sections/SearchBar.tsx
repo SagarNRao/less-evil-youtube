@@ -86,7 +86,7 @@ const SearchBar: React.FC = () => {
           },
           finalTitle: title,
           finalID: videoId,
-          distracting: distracting
+          distracting: distracting,
         };
       }
     );
