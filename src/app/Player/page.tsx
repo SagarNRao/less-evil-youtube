@@ -1,17 +1,20 @@
 "use client";
 import React from "react";
 import { useSearchParams } from "next/navigation";
-import YTMPlayer from "@/components/sections/YTMPlayer";
+import ReactPlayer from "react-player";
 
 export default function Player() {
   const searchParams = useSearchParams();
-  const here = searchParams.get("search");
-  console.log(searchParams.get("search"));
+  const url = searchParams.get("url");
+  const name = searchParams.get("name");
+
+  console.log("URL:", url);
+  console.log("Name:", name);
 
   return (
-    <YTMPlayer
-      url={searchParams.get("url") as string}
-      Name={searchParams.get("name") as string}
-    ></YTMPlayer>
+    <div>
+      <h1>{url}</h1>
+      <ReactPlayer url={url as string} />
+    </div>
   );
 }
