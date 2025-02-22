@@ -27,9 +27,9 @@ export default function Player() {
   };
 
   const data = {
-    title: 'Example Title',
-    description: 'Example Description',
-    category: 'Example Category',
+    title: 'try not to laugh challenge',
+    description: 'Had a blast making the video, not cleaning it up though lol.',
+    category: 'https://en.wikipedia.org/wiki/Entertainment',
   };
 
   return (
