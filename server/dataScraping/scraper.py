@@ -68,18 +68,18 @@ def search(query):
                 "id": video_id,
                 "title": title,
                 "description": desc,
-                'topic_categories': "['Maths', 'Education']",
-                "category": 22,
+                'topic_categories': "['Entertainment', 'memes']",
+                "category": 27,
                 "thumbnail": "",
                 "tags": "",
-                "distracting": 0
+                "distracting": 1
             }])
 
             # Concatenate the new row with the existing DataFrame
             df = pd.concat([df, new_row], ignore_index=True)
 
             print("-------------------")
-            df.to_csv('scraped_videos2.csv', index=False)
+            df.to_csv('scraped_videos3.csv', index=False)
             
             search_box.send_keys(Keys.CONTROL, "a")
             search_box.send_keys(Keys.DELETE)
@@ -89,7 +89,7 @@ def search(query):
             continue
 
 
-search("calculus")
+search("slander")
 # search("discord memes")
 
 print(df)
