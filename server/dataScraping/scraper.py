@@ -30,7 +30,6 @@ def search(query):
     search_box.send_keys(query)
     search_box.send_keys(Keys.RETURN)
     search_box.click()
-    
 
     time.sleep(5)
 
@@ -80,7 +79,7 @@ def search(query):
 
             print("-------------------")
             df.to_csv('scraped_videos3.csv', index=False)
-            
+
             search_box.send_keys(Keys.CONTROL, "a")
             search_box.send_keys(Keys.DELETE)
 
@@ -106,4 +105,4 @@ chrome_options.add_experimental_option("detach", True)
 
 # now just wait for a while and let the script do its thing
 
-# i deleted that csv to start over 
+# i deleted that csv to start over

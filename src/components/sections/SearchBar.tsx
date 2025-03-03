@@ -52,9 +52,12 @@ const SearchBar: React.FC = () => {
         let distracting;
 
         try {
+          console.log(searchKey)
           const response = await axios.post(
             `http://localhost:5000/model`,
-            { videoID: item.finalID },
+            {
+              searchKey: searchKey
+            },
             {
               headers: {
                 "Content-Type": "application/json",
