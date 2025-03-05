@@ -38,7 +38,7 @@ const SearchBar: React.FC = () => {
 
   const Search = async () => {
     const response = await axios.get(
-      `https://www.googleapis.com/youtube/v3/search/?part=snippet&key=${process.env.NEXT_PUBLIC_YOUTUBE_API_KEY}&q=${searchKey}`
+      `https://www.googleapis.com/youtube/v3/search/?part=snippet&maxResults=25&key=${process.env.NEXT_PUBLIC_YOUTUBE_API_KEY}&q=${searchKey}`
     );
 
     console.log(response);
@@ -54,7 +54,7 @@ const SearchBar: React.FC = () => {
         try {
           console.log(searchKey)
           const response = await axios.post(
-            `http://localhost:5000/model`,
+            `http://localhost:5000/search`,
             {
               searchKey: searchKey
             },

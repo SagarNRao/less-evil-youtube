@@ -32,7 +32,7 @@ def predict_distraction(title, description=None):
 model = joblib.load('server/model.pkl')
 
 
-@app.route("/model", methods=["POST"])
+@app.route("/search", methods=["POST"])
 def review():
     global input_data
     input_data = request.get_json()
@@ -43,17 +43,11 @@ def review():
 
     prediction, confidence = predict_distraction(title)
 
-    # return jsonify({"message": True})
-    # return jsonify({"message": False})
     if prediction == 0:
-        return jsonify({"message": True})
+        return jsonify({"message": True}) # if distracting
     else:
-        return jsonify({"message": False})
+        return jsonify({"message": False}) # if not distracting
 
-    # True if distracting
-    # False if not distracting
-
-    # hardcoded for testing purposes will use an ML model later
 
 
 @app.route("/get_input_data", methods=["GET"])
