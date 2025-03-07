@@ -1,27 +1,27 @@
 // import axios from "axios";
 
+const searchButton = document.evaluate(
+  "/html/body/ytd-app/div[1]/div[2]/ytd-masthead/div[4]/div[2]/yt-searchbox/button",
+  document,
+  null,
+  XPathResult.FIRST_ORDERED_NODE_TYPE,
+  null
+).singleNodeValue;
+
+const searchInput = document.evaluate(
+  "/html/body/ytd-app/div[1]/div[2]/ytd-masthead/div[4]/div[2]/yt-searchbox/div[1]/form/input",
+  document,
+  null,
+  XPathResult.FIRST_ORDERED_NODE_TYPE,
+  null
+).singleNodeValue;
+
 function moddedSearch() {
-  const searchButton = document.evaluate(
-    "/html/body/ytd-app/div[1]/div[2]/ytd-masthead/div[4]/div[2]/yt-searchbox/button",
-    document,
-    null,
-    XPathResult.FIRST_ORDERED_NODE_TYPE,
-    null
-  ).singleNodeValue;
-
-  const searchInput = document.evaluate(
-    "/html/body/ytd-app/div[1]/div[2]/ytd-masthead/div[4]/div[2]/yt-searchbox/div[1]/form/input",
-    document,
-    null,
-    XPathResult.FIRST_ORDERED_NODE_TYPE,
-    null
-  ).singleNodeValue;
-
   if (searchButton) {
     searchButton.addEventListener("click", (event) => {
       event.preventDefault(); // Prevent default search
 
-      JSON.stringify({searchKey: searchInput.value});
+      searchKey = JSON.stringify({ searchKey: searchInput.value });
       console.log(searchKey);
       myCustomFunction();
 
@@ -37,7 +37,6 @@ async function myCustomFunction() {
   // Your custom logic here
   console.log("Custom function executed before YouTube search.");
   // Example: modify the search term.
-  const searchInput = document.getElementById("search");
   if (searchInput) {
     const searchTerm = searchInput.value;
     console.log(searchTerm);
@@ -51,6 +50,7 @@ async function myCustomFunction() {
       body: JSON.stringify({
         searchKey: searchInput.value,
       }),
+      // body: searchInput.value,
     }).then((res) => res.json());
     console.log(response);
   }
