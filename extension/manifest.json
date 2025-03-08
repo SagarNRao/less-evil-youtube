@@ -1,12 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "YouTube_Extension",
+  "name": "Less_Distracting_YouTube",
   "version": "1.0.0",
   "content_scripts": [
     {
       "matches": ["https://www.youtube.com/*"],
-      "js": ["content.js"],
+      "css": ["styles.css"],
+      "js": ["lib/axios.min.js", "content.js"],
       "type": "module"
     }
-  ]
+  ],
+  "permissions": ["activeTab"]
 }
