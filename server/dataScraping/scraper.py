@@ -10,6 +10,15 @@ import time
 import pandas as pd
 
 chrome_options = Options()
+chrome_options.add_argument("--headless")  # Run in headless mode
+# Disable GPU acceleration (optional)
+chrome_options.add_argument("--disable-gpu")
+# Set window size (optional)
+chrome_options.add_argument("--window-size=1920,1080")
+# Bypass OS security model (useful for CI/CD)
+chrome_options.add_argument("--no-sandbox")
+# Overcome limited resource problems
+chrome_options.add_argument("--disable-dev-shm-usage")
 
 website = 'https://www.youtube.com'
 path = 'C:/Users/username/Downloads/chromedriver_win32/chromedriver.exe'
@@ -21,12 +30,10 @@ search_box = driver.find_element(
     "xpath", '/html/body/ytd-app/div[1]/div[2]/ytd-masthead/div[4]/div[2]/yt-searchbox/div[1]/form/input')
 search_box.click()
 
-df = pd.DataFrame(columns=["id", "title", "description",
-                  'topic_categories' "thumbnail", "tags", "distracting"])
-
 
 def search(query):
-    global df
+    df = pd.DataFrame(columns=["id", "title", "description",
+                               'topic_categories' "thumbnail", "tags", "distracting"])
     search_box.send_keys(query)
     search_box.send_keys(Keys.RETURN)
     search_box.click()
@@ -78,7 +85,7 @@ def search(query):
             df = pd.concat([df, new_row], ignore_index=True)
 
             print("-------------------")
-            df.to_csv('scraped_videos3.csv', index=False)
+            df.to_csv(f'{query}.csv', index=False)
 
             search_box.send_keys(Keys.CONTROL, "a")
             search_box.send_keys(Keys.DELETE)
@@ -88,8 +95,18 @@ def search(query):
             continue
 
 
-search("slander")
+memeTopics = ["vines", "brainrot", "shitposts"]
+animeTopics = ["solo leveling", "anime moments", "shonen anime"]
+gamingTopics = ["valorant", "League of Legends"]
+
+for topic in animeTopics:
+    search(topic)
+    
+for topic in gamingTopics:
+    search(topic)
+
 # search("discord memes")
+
 
 print(df)
 
