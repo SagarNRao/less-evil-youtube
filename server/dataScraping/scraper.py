@@ -74,11 +74,11 @@ def search(query):
                 "id": video_id,
                 "title": title,
                 "description": desc,
-                'topic_categories': "['Entertainment', 'memes']",
+                'topic_categories': "['Education', 'maths']",
                 "category": 27,
                 "thumbnail": "",
                 "tags": "",
-                "distracting": 1
+                "distracting": 0
             }])
 
             # Concatenate the new row with the existing DataFrame
@@ -95,20 +95,27 @@ def search(query):
             continue
 
 
-memeTopics = ["vines", "brainrot", "shitposts"]
-animeTopics = ["solo leveling", "anime moments", "shonen anime"]
-gamingTopics = ["valorant", "League of Legends"]
+# memeTopics = ["vines", "brainrot", "shitposts"]
+# animeTopics = ["solo leveling", "anime moments", "shonen anime"]
+# gamingTopics = ["valorant", "League of Legends"]
 
-for topic in animeTopics:
-    search(topic)
+# for topic in animeTopics:
+#     search(topic)
     
-for topic in gamingTopics:
-    search(topic)
+# for topic in gamingTopics:
+#     search(topic)
+    
+mathsTopics = ["Calculus", "How to find area under the curve using calculus", "integral calculus" ]
+agileTopics = ["Agile", "Scrum", "Scrum roles", "XP", "Kanban"]   
+IMLTopics = ["Supervised learning", "unsupervised learning", "how to do linear regression"]
+progTopics = ["nextjs", "DBMS", "binary trees", ]
+fitnessTopics = ["diet for bulking", "diet for cutting", "brain boosting foods", "how to get bigger shoulders", "how to get bigger arms"]
 
-# search("discord memes")
+nonDistractingTopics = [mathsTopics, agileTopics, IMLTopics, progTopics]
 
-
-print(df)
+for topic in nonDistractingTopics:
+    for subtopic in topic:
+        search(subtopic)
 
 
 try:
