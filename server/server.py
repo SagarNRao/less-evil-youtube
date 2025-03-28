@@ -19,7 +19,7 @@ def predict_distraction(title, description=None):
     probability = model.predict_proba([text])[0]
     
     print(f'Title: {title}')
-    print(f'Prediction: {"Not Distracting" if prediction == 1 else "Distracting"}')
+    print(f'Prediction: {"Not Distracting" if prediction == 0 else "Distracting"}')
     print(f'Confidence: {max(probability):.2%}')
     
     # Convert to native Python types
@@ -43,7 +43,7 @@ def review():
 
     prediction, confidence = predict_distraction(title)
 
-    if prediction == 0:
+    if prediction == 1:
         return jsonify({"message": True}) # if distracting
     else:
         return jsonify({"message": False}) # if not distracting

@@ -34,32 +34,91 @@ function moddedSearch() {
 }
 
 async function distractionUIBlock() {
+  console.log("Blocking distracting search");
+
+  if (document.getElementById("distraction-overlay")) {
+    console.log("Overlay already exists");
+    return;
+  }
+
   console.log("Undistracting");
   const overlay = document.createElement("div");
   overlay.classList.add("overlay");
   document.body.appendChild(overlay);
+  overlay.id = "distraction-overlay";
 
-  overlay.style.position = 'fixed';
-  overlay.style.top = '0';
-  overlay.style.left = '0';
-  overlay.style.width = '100%';
-  overlay.style.height = '100%';
-  overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
-  overlay.style.zIndex = '9999';
-  overlay.style.display = 'flex';
-  overlay.style.justifyContent = 'center';
-  overlay.style.alignItems = 'center';
+  overlay.style.position = "fixed";
+  overlay.style.top = "56px"; // Leave space for the header
+  overlay.style.left = "0";
+  overlay.style.width = "100%";
+  overlay.style.height = "calc(100% - 56px)"; // Adjust height to account for header
+  overlay.style.backgroundColor = "rgb(0, 0, 0)";
+  overlay.style.zIndex = "9999";
+  overlay.style.display = "flex";
+  overlay.style.justifyContent = "center";
+  overlay.style.alignItems = "center";
 
-  const message = document.createElement('h1');
-  message.textContent = 'Get back to work';
-  message.style.color = 'white';
-  message.style.fontFamily = 'Geist, sans-serif';
-  message.style.fontSize = '2rem';
+  const message = document.createElement("h1");
+  message.textContent = "Get back to work";
+  message.style.color = "white";
+  message.style.fontFamily = "Geist, sans-serif";
+  message.style.fontSize = "2rem";
   overlay.appendChild(message);
 
   // Log the image URL to verify it's correct
-  console.log('Image URL:', image.src);
+  console.log("Image URL:", image.src);
 }
+
+function removeDistractionUIBlock() {
+  console.log("Removing distraction block");
+  const overlay = document.getElementById("distraction-overlay");
+  if (overlay) {
+    overlay.remove();
+  }
+}
+
+function detectVideoPlayer() {
+  const videoPlayer = document.evaluate(
+    "/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[5]/div[1]/div/div[1]/div[2]/div/div/ytd-player/div/div/div[1]/video",
+    document,
+    null,
+    XPathResult.FIRST_ORDERED_NODE_TYPE,
+    null
+  ).singleNodeValue;
+
+  if (videoPlayer) {
+    console.log("Video player detected");
+    // setWatchingIndividualVideo("watchingVideo", 1);
+  } else {
+    console.log("No video player detected");
+    // setWatchingIndividualVideo("watchingVideo", 0);
+  }
+}
+
+// Function to run on page load and URL changes
+function setupVideoDetection() {
+  detectVideoPlayer();
+
+  // Create observer for URL changes
+  const observer = new MutationObserver(() => {
+    if (window.location.href !== lastUrl) {
+      lastUrl = window.location.href;
+      detectVideoPlayer();
+    }
+  });
+
+  // Track last URL
+  let lastUrl = window.location.href;
+
+  // Start observing
+  observer.observe(document.body, {
+    subtree: true,
+    childList: true,
+  });
+}
+
+// Initial setup
+setupVideoDetection();
 
 async function myCustomFunction() {
   // Your custom logic here
@@ -71,21 +130,29 @@ async function myCustomFunction() {
 
     // Make an API call using axios
     try {
-      const response = await axios.post("http://localhost:5000/search", {
-        searchKey: searchTerm,
-      }, {
-        headers: {
-          "Content-Type": "application/json",
+      const response = await axios.post(
+        "http://localhost:5000/search",
+        {
+          searchKey: searchTerm,
         },
-      });
-      console.log('Success:', response.data);
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log("Success:", response.data);
 
       if (response.data.message == true) {
         console.log("caught a true");
+        searchedForDistracting = 1;
         distractionUIBlock();
+      } else {
+        searchedForDistracting = 0;
+        removeDistractionUIBlock();
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
     }
   }
 }
