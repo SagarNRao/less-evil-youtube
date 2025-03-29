@@ -91,26 +91,55 @@ function detectVideoPlayer() {
     // setWatchingIndividualVideo("watchingVideo", 1);
   } else {
     console.log("No video player detected");
+    setTimeout(() => {
+      detectVideoPlayer();
+    }, 3000);
     // setWatchingIndividualVideo("watchingVideo", 0);
   }
 }
 
-// Function to run on page load and URL changes
 function setupVideoDetection() {
   detectVideoPlayer();
 
-  // Create observer for URL changes
   const observer = new MutationObserver(() => {
     if (window.location.href !== lastUrl) {
       lastUrl = window.location.href;
       detectVideoPlayer();
+
+      setTimeout(async () => {
+        const sideBar = document.evaluate(
+          "/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[5]/div[2]/div/div[4]/ytd-watch-next-secondary-results-renderer/div[2]/ytd-item-section-renderer/div[3]",
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null
+        ).singleNodeValue;
+
+        if (sideBar) {
+          const videos = sideBar.querySelectorAll("ytd-compact-video-renderer");
+          for (const video of videos) {
+            const titleElement = video.querySelector("#video-title");
+            if (titleElement) {
+              const titleText = titleElement.textContent;
+              const link = video.querySelector("#thumbnail").href;
+              console.log("Title:", titleText);
+              console.log("Link:", link);
+
+              if ((await predict(titleText, " ")) === 1) {
+                titleElement.style.color = "red";
+                titleElement.textContent = "⚠️ Distracting Content";
+              }
+            }
+          }
+        } else {
+          console.log("Sidebar not found");
+        }
+      }, 3000);
     }
   });
 
-  // Track last URL
   let lastUrl = window.location.href;
 
-  // Start observing
   observer.observe(document.body, {
     subtree: true,
     childList: true,
@@ -119,6 +148,37 @@ function setupVideoDetection() {
 
 // Initial setup
 setupVideoDetection();
+
+async function predict(title, description) {
+  const input = title + " " + description;
+  let distracting = 0;
+
+  try {
+    const response = await axios.post(
+      "http://localhost:5000/search",
+      {
+        searchKey: input,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log("Success:", response.data);
+
+    if (response.data.message == true) {
+      console.log(input, "is distracting");
+      distracting = 1;
+    } else {
+      distracting = 0;
+    }
+  } catch (error) {
+    console.error("Error:", error);
+  }
+
+  return distracting;
+}
 
 async function myCustomFunction() {
   // Your custom logic here
@@ -144,7 +204,7 @@ async function myCustomFunction() {
       console.log("Success:", response.data);
 
       if (response.data.message == true) {
-        console.log("caught a true");
+        console.log(searchTerm, " is distracting");
         searchedForDistracting = 1;
         distractionUIBlock();
       } else {
