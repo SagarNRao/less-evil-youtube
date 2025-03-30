@@ -74,7 +74,7 @@ def search(query):
                 "id": video_id,
                 "title": title,
                 "description": desc,
-                'topic_categories': "['Education', 'maths']",
+                'topic_categories': "['Entertainment', 'memes']",
                 "category": 27,
                 "thumbnail": "",
                 "tags": "",
@@ -105,17 +105,21 @@ def search(query):
 # for topic in gamingTopics:
 #     search(topic)
     
-mathsTopics = ["Calculus", "How to find area under the curve using calculus", "integral calculus" ]
-agileTopics = ["Agile", "Scrum", "Scrum roles", "XP", "Kanban"]   
-IMLTopics = ["Supervised learning", "unsupervised learning", "how to do linear regression"]
-progTopics = ["nextjs", "DBMS", "binary trees", ]
-fitnessTopics = ["diet for bulking", "diet for cutting", "brain boosting foods", "how to get bigger shoulders", "how to get bigger arms"]
+# mathsTopics = ["Calculus", "How to find area under the curve using calculus", "integral calculus" ]
+# agileTopics = ["Agile", "Scrum", "Scrum roles", "XP", "Kanban"]   
+# IMLTopics = ["Supervised learning", "unsupervised learning", "how to do linear regression"]
+# progTopics = ["nextjs", "DBMS", "binary trees", ]
+# fitnessTopics = ["diet for bulking", "diet for cutting", "brain boosting foods", "how to get bigger shoulders", "how to get bigger arms"]
 
-nonDistractingTopics = [mathsTopics, agileTopics, IMLTopics, progTopics]
+# nonDistractingTopics = [mathsTopics, agileTopics, IMLTopics, progTopics]
 
-for topic in nonDistractingTopics:
-    for subtopic in topic:
-        search(subtopic)
+# for topic in nonDistractingTopics:
+#     for subtopic in topic:
+#         search(subtopic)
+
+search("try not to laugh memes")
+search("try not to laugh impossible")
+search("brainrot memes")
 
 
 try:
