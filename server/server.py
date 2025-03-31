@@ -13,8 +13,13 @@ input_data = None
 
 
 
-def predict_distraction(title, description=None):
-    text = title + ' ' + (description or '')
+def predict_distraction(title, description=None, tags=None, topic_categories=None):
+    text = (
+        (title or '') + ' ' +
+        (description or '') + ' ' +
+        (' '.join(tags) if tags else '') + ' ' +
+        (' '.join(topic_categories) if topic_categories else '')
+    )
     prediction = model.predict([text])[0]
     probability = model.predict_proba([text])[0]
     
@@ -37,11 +42,14 @@ def review():
     global input_data
     input_data = request.get_json()
     title = input_data.get('searchKey')
+    description = input_data.get('description')
+    tags = input_data.get('tags', [])
+    topic_categories = input_data.get('topic_categories', [])
     # description = input_data.get('videoID')
     
     print(title)
 
-    prediction, confidence = predict_distraction(title)
+    prediction, confidence = predict_distraction(title, description, tags, topic_categories)
 
     if prediction == 1:
         return jsonify({"message": True}) # if distracting

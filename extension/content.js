@@ -25,8 +25,7 @@ function moddedSearch() {
       console.log(searchKey);
       myCustomFunction();
 
-      // Trigger YouTube's search after your function completes
-      searchButton.click(); // Or submit the form
+      searchButton.click();
     });
   } else {
     console.error("YouTube search button not found.");
@@ -99,6 +98,7 @@ function detectVideoPlayer() {
 }
 
 function setupVideoDetection() {
+  // FOR SIDEBAR
   detectVideoPlayer();
 
   const observer = new MutationObserver(() => {
@@ -125,6 +125,9 @@ function setupVideoDetection() {
               console.log("Title:", titleText);
               console.log("Link:", link);
 
+              const videoId = link.split("v=")[1].split("&")[0];
+              await YTApiCall(videoId);
+
               if ((await predict(titleText, " ")) === 1) {
                 titleElement.style.color = "red";
                 titleElement.textContent = "⚠️ Distracting Content";
@@ -146,11 +149,33 @@ function setupVideoDetection() {
   });
 }
 
+const API_KEY = process.env.API_KEY;
+
+async function YTApiCall(videoID) {
+  url = `https://youtube.googleapis.com/youtube/v3/videos?part=topicDetails,snippet&id=${videoID}&key=${API_KEY}`;
+
+  try {
+    const response = await axios.post(
+      url,
+      {
+        searchKey: input,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  } catch (error) {
+    console.error("Error:", error);
+  }
+}
+
 // Initial setup
 setupVideoDetection();
 
-async function predict(title, description) {
-  const input = title + " " + description;
+async function predict(title, description, tags, topic_categories) {
+  const input = title + " " + description + " " + tags + " " + topic_categories;
   let distracting = 0;
 
   try {
