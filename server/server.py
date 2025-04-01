@@ -7,10 +7,9 @@ import os
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}}) 
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 input_data = None
-
 
 
 def predict_distraction(title, description=None, tags=None, topic_categories=None):
@@ -22,15 +21,16 @@ def predict_distraction(title, description=None, tags=None, topic_categories=Non
     )
     prediction = model.predict([text])[0]
     probability = model.predict_proba([text])[0]
-    
+
     print(f'Title: {title}')
-    print(f'Prediction: {"Not Distracting" if prediction == 0 else "Distracting"}')
+    print(
+        f'Prediction: {"Not Distracting" if prediction == 0 else "Distracting"}')
     print(f'Confidence: {max(probability):.2%}')
-    
+
     # Convert to native Python types
     prediction = int(prediction)
     confidence = float(max(probability))
-    
+
     return prediction, confidence
 
 
@@ -46,16 +46,16 @@ def review():
     tags = input_data.get('tags', [])
     topic_categories = input_data.get('topic_categories', [])
     # description = input_data.get('videoID')
-    
-    print(title)
 
-    prediction, confidence = predict_distraction(title, description, tags, topic_categories)
+    print(input_data)
+
+    prediction, confidence = predict_distraction(
+        title, description, tags, topic_categories)
 
     if prediction == 1:
-        return jsonify({"message": True}) # if distracting
+        return jsonify({"message": True})  # if distracting
     else:
-        return jsonify({"message": False}) # if not distracting
-
+        return jsonify({"message": False})  # if not distracting
 
 
 @app.route("/get_input_data", methods=["GET"])

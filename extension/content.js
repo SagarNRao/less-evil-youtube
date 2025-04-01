@@ -126,9 +126,17 @@ function setupVideoDetection() {
               console.log("Link:", link);
 
               const videoId = link.split("v=")[1].split("&")[0];
-              await YTApiCall(videoId);
+              const videoData = await YTApiCall(videoId);
+              console.log(videoId)
+              const tags = videoData.tags;
+              const topicCategories = videoData.topicCategories;
 
-              if ((await predict(titleText, " ")) === 1) {
+              console.log("Tags:", tags);
+              console.log("Topic Categories:", topicCategories);
+
+              if (
+                (await predict(titleText, " ", tags, topicCategories)) === 1
+              ) {
                 titleElement.style.color = "red";
                 titleElement.textContent = "⚠️ Distracting Content";
               }
@@ -149,40 +157,43 @@ function setupVideoDetection() {
   });
 }
 
-const API_KEY = process.env.API_KEY;
+const API_KEY = "AIzaSyB5ZAgrVpwQPQ9-azlbQ80lMTsGP2kbzmk";
 
 async function YTApiCall(videoID) {
-  url = `https://youtube.googleapis.com/youtube/v3/videos?part=topicDetails,snippet&id=${videoID}&key=${API_KEY}`;
+  const url = `https://youtube.googleapis.com/youtube/v3/videos?part=topicDetails,snippet&id=${videoID}&key=${API_KEY}`;
 
   try {
-    const response = await axios.post(
-      url,
-      {
-        searchKey: input,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await axios.get(url);
+    const video = response.data.items[0];
+    console.log("HERE",response.data);
+    return {
+      tags: video.snippet.tags || [],
+      topicCategories: video.topicDetails?.topicCategories || [],
+    };
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error Here:", error);
+    return {
+      tags: [],
+      topicCategories: [],
+    };
   }
 }
 
 // Initial setup
 setupVideoDetection();
 
-async function predict(title, description, tags, topic_categories) {
-  const input = title + " " + description + " " + tags + " " + topic_categories;
+async function predict(title, description, tags, topicCategories) {
+  const input = title + " " + description;
   let distracting = 0;
 
   try {
     const response = await axios.post(
       "http://localhost:5000/search",
       {
-        searchKey: input,
+        searchKey: title, // Send the title as the searchKey
+        descripti00on: description || "", // Send the description
+        tags: tags || [], // Send tags as an array
+        topic_categories: topicCategories || [], // Send topicCategories as an array
       },
       {
         headers: {
@@ -204,7 +215,6 @@ async function predict(title, description, tags, topic_categories) {
 
   return distracting;
 }
-
 async function myCustomFunction() {
   // Your custom logic here
   console.log("Custom function executed before YouTube search.");
