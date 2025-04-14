@@ -106,7 +106,7 @@ function setupVideoDetection() {
       lastUrl = window.location.href;
       detectVideoPlayer();
 
-      setTimeout(async () => {
+      setInterval(async () => {
         const sideBar = document.evaluate(
           "/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[5]/div[2]/div/div[4]/ytd-watch-next-secondary-results-renderer/div[2]/ytd-item-section-renderer/div[3]",
           document,
@@ -145,7 +145,7 @@ function setupVideoDetection() {
         } else {
           console.log("Sidebar not found");
         }
-      }, 3000);
+      }, 5000);
     }
   });
 
@@ -157,7 +157,7 @@ function setupVideoDetection() {
   });
 }
 
-const API_KEY = "AIzaSyB5ZAgrVpwQPQ9-azlbQ80lMTsGP2kbzmk";
+const API_KEY = "AIzaSyD1LNSDcDrMj6aGAHwbi4r1Oh6em6xs4uo";
 
 async function YTApiCall(videoID) {
   const url = `https://youtube.googleapis.com/youtube/v3/videos?part=topicDetails,snippet&id=${videoID}&key=${API_KEY}`;
@@ -185,6 +185,12 @@ setupVideoDetection();
 async function predict(title, description, tags, topicCategories) {
   const input = title + " " + description;
   let distracting = 0;
+
+  if (title === "⚠️ Distracting Content")
+  {
+    distracting = 1;
+    return distracting;
+  }
 
   try {
     const response = await axios.post(
