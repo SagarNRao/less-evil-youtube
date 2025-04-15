@@ -106,7 +106,7 @@ function setupVideoDetection() {
       lastUrl = window.location.href;
       detectVideoPlayer();
 
-      setInterval(async () => {
+      setTimeout(async () => {
         const sideBar = document.evaluate(
           "/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[5]/div[2]/div/div[4]/ytd-watch-next-secondary-results-renderer/div[2]/ytd-item-section-renderer/div[3]",
           document,
@@ -157,7 +157,7 @@ function setupVideoDetection() {
   });
 }
 
-const API_KEY = "AIzaSyD1LNSDcDrMj6aGAHwbi4r1Oh6em6xs4uo";
+const API_KEY = "AIzaSyBCQnr8GmsG35VdPP4bh6H9cD6cmlQpqFo";
 
 async function YTApiCall(videoID) {
   const url = `https://youtube.googleapis.com/youtube/v3/videos?part=topicDetails,snippet&id=${videoID}&key=${API_KEY}`;
@@ -188,7 +188,7 @@ async function predict(title, description, tags, topicCategories) {
 
   if (title === "⚠️ Distracting Content")
   {
-    distracting = 1;
+    distracting = 0; // initially 1
     return distracting;
   }
 
@@ -211,9 +211,9 @@ async function predict(title, description, tags, topicCategories) {
 
     if (response.data.message == true) {
       console.log(input, "is distracting");
-      distracting = 1;
+      distracting = 1; //initially 1
     } else {
-      distracting = 0;
+      distracting = 0; // initally 0
     }
   } catch (error) {
     console.error("Error:", error);

@@ -101,15 +101,20 @@ def search(query):
 
 # for topic in animeTopics:
 #     search(topic)
-    
+
 # for topic in gamingTopics:
 #     search(topic)
-    
+
 # mathsTopics = ["Calculus", "How to find area under the curve using calculus", "integral calculus" ]
-# agileTopics = ["Agile", "Scrum", "Scrum roles", "XP", "Kanban"]   
-# IMLTopics = ["Supervised learning", "unsupervised learning", "how to do linear regression"]
+# agileTopics = ["Agile", "Scrum", "Scrum roles", "XP", "Kanban"]
+IMLTopics = ["kmeans", "clustering", "PCA Analysis", "AI/ML", "Artificial Intelligence", "generative AI", "Random Forest",
+             "Gradient Descent", "Decision Tree", "Confusion matrix", "Hyperparameter tuning", "Convolutional Neural Networks"]
 # progTopics = ["nextjs", "DBMS", "binary trees", ]
 # fitnessTopics = ["diet for bulking", "diet for cutting", "brain boosting foods", "how to get bigger shoulders", "how to get bigger arms"]
+
+for topic in IMLTopics:
+    search(topic)
+
 
 # nonDistractingTopics = [mathsTopics, agileTopics, IMLTopics, progTopics]
 
@@ -117,9 +122,9 @@ def search(query):
 #     for subtopic in topic:
 #         search(subtopic)
 
-search("try not to laugh memes")
-search("try not to laugh impossible")
-search("brainrot memes")
+# search("try not to laugh memes")
+# search("try not to laugh impossible")
+# search("brainrot memes")
 
 
 try:
