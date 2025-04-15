@@ -74,7 +74,7 @@ def search(query):
                 "id": video_id,
                 "title": title,
                 "description": desc,
-                'topic_categories': "['Entertainment', 'memes']",
+                'topic_categories': "['Education', 'maths']",
                 "category": 27,
                 "thumbnail": "",
                 "tags": "",
@@ -105,14 +105,14 @@ def search(query):
 # for topic in gamingTopics:
 #     search(topic)
 
-# mathsTopics = ["Calculus", "How to find area under the curve using calculus", "integral calculus" ]
+mathsTopics = ["partial differentiation", "integration", "calculus", "laplace transform", "curve sketching", "derivatives", "maxima and minima" ]
 # agileTopics = ["Agile", "Scrum", "Scrum roles", "XP", "Kanban"]
-IMLTopics = ["kmeans", "clustering", "PCA Analysis", "AI/ML", "Artificial Intelligence", "generative AI", "Random Forest",
-             "Gradient Descent", "Decision Tree", "Confusion matrix", "Hyperparameter tuning", "Convolutional Neural Networks"]
+# IMLTopics = ["kmeans", "clustering", "PCA Analysis", "AI/ML", "Artificial Intelligence", "generative AI", "Random Forest",
+#              "Gradient Descent", "Decision Tree", "Confusion matrix", "Hyperparameter tuning", "Convolutional Neural Networks"]
 # progTopics = ["nextjs", "DBMS", "binary trees", ]
 # fitnessTopics = ["diet for bulking", "diet for cutting", "brain boosting foods", "how to get bigger shoulders", "how to get bigger arms"]
 
-for topic in IMLTopics:
+for topic in mathsTopics:
     search(topic)
 
 
