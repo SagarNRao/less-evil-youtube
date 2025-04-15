@@ -97,11 +97,72 @@ function detectVideoPlayer() {
   }
 }
 
+// function setupVideoDetection() {
+//   // FOR SIDEBAR
+//   detectVideoPlayer();
+
+//   const observer = new MutationObserver(() => {
+//     if (window.location.href !== lastUrl) {
+//       lastUrl = window.location.href;
+//       detectVideoPlayer();
+
+//       setTimeout(async () => {
+//         const sideBar = document.evaluate(
+//           "/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[5]/div[2]/div/div[4]/ytd-watch-next-secondary-results-renderer/div[2]/ytd-item-section-renderer/div[3]",
+//           document,
+//           null,
+//           XPathResult.FIRST_ORDERED_NODE_TYPE,
+//           null
+//         ).singleNodeValue;
+
+//         if (sideBar) {
+//           const videos = sideBar.querySelectorAll("ytd-compact-video-renderer");
+//           for (const video of videos) {
+//             const titleElement = video.querySelector("#video-title");
+//             if (titleElement) {
+//               const titleText = titleElement.textContent;
+//               const link = video.querySelector("#thumbnail").href;
+//               console.log("Title:", titleText);
+//               console.log("Link:", link);
+
+//               const videoId = link.split("v=")[1].split("&")[0];
+//               const videoData = await YTApiCall(videoId);
+//               console.log(videoId)
+//               const tags = videoData.tags;
+//               const topicCategories = videoData.topicCategories;
+//               const description = videoData.description;
+
+//               console.log("Tags:", tags);
+//               console.log("Topic Categories:", topicCategories);
+
+//               if (
+//                 (await predict(titleText, description, tags, topicCategories)) === 1
+//               ) {
+//                 titleElement.style.color = "red";
+//                 titleElement.textContent = "⚠️ Distracting Content";
+//               }
+//             }
+//           }
+//         } else {
+//           console.log("Sidebar not found");
+//         }
+//       }, 5000);
+//     }
+//   });
+
+//   let lastUrl = window.location.href;
+
+//   observer.observe(document.body, {
+//     subtree: true,
+//     childList: true,
+//   });
+// }
+
 function setupVideoDetection() {
   // FOR SIDEBAR
   detectVideoPlayer();
 
-  const observer = new MutationObserver(() => {
+  const observer = new MutationObserver((mutations) => {
     if (window.location.href !== lastUrl) {
       lastUrl = window.location.href;
       detectVideoPlayer();
@@ -116,6 +177,7 @@ function setupVideoDetection() {
         ).singleNodeValue;
 
         if (sideBar) {
+          // Process initial videos in the sidebar
           const videos = sideBar.querySelectorAll("ytd-compact-video-renderer");
           for (const video of videos) {
             const titleElement = video.querySelector("#video-title");
@@ -127,7 +189,7 @@ function setupVideoDetection() {
 
               const videoId = link.split("v=")[1].split("&")[0];
               const videoData = await YTApiCall(videoId);
-              console.log(videoId)
+              console.log(videoId);
               const tags = videoData.tags;
               const topicCategories = videoData.topicCategories;
               const description = videoData.description;
@@ -143,6 +205,9 @@ function setupVideoDetection() {
               }
             }
           }
+
+          // Prevent sidebar from loading new videos
+          lockSidebar(sideBar);
         } else {
           console.log("Sidebar not found");
         }
@@ -156,6 +221,47 @@ function setupVideoDetection() {
     subtree: true,
     childList: true,
   });
+}
+
+function lockSidebar(sideBar) {
+  console.log("Locking sidebar to prevent reloading new videos");
+
+  // Option 1: Disconnect the sidebar's dynamic loading by removing new nodes
+  const sidebarObserver = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.addedNodes.length) {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE && node.matches("ytd-compact-video-renderer")) {
+            console.log("Prevented new video from being added to sidebar");
+            node.remove(); // Remove newly added video elements
+          }
+        });
+      }
+    }
+  });
+
+  sidebarObserver.observe(sideBar, {
+    childList: true,
+    subtree: true,
+  });
+
+  // Option 2: Disable infinite scroll by preventing scroll events from triggering new content
+  sideBar.addEventListener("scroll", (event) => {
+    event.stopPropagation(); // Prevent scroll events from bubbling up
+    console.log("Blocked sidebar scroll event");
+  }, { passive: false });
+
+  // Option 3: Clear any dynamically added content after initial load
+  const checkForNewContent = () => {
+    const newVideos = sideBar.querySelectorAll("ytd-compact-video-renderer");
+    if (newVideos.length > initialVideoCount) {
+      console.log("Detected new videos; removing excess");
+      Array.from(newVideos).slice(initialVideoCount).forEach((video) => video.remove());
+    }
+  };
+
+  const initialVideoCount = sideBar.querySelectorAll("ytd-compact-video-renderer").length;
+  setInterval(checkForNewContent, 1000); // Check every second for new content
 }
 
 const API_KEY = "AIzaSyBCQnr8GmsG35VdPP4bh6H9cD6cmlQpqFo";
