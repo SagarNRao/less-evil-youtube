@@ -130,12 +130,13 @@ function setupVideoDetection() {
               console.log(videoId)
               const tags = videoData.tags;
               const topicCategories = videoData.topicCategories;
+              const description = videoData.description;
 
               console.log("Tags:", tags);
               console.log("Topic Categories:", topicCategories);
 
               if (
-                (await predict(titleText, " ", tags, topicCategories)) === 1
+                (await predict(titleText, description, tags, topicCategories)) === 1
               ) {
                 titleElement.style.color = "red";
                 titleElement.textContent = "⚠️ Distracting Content";
@@ -169,6 +170,7 @@ async function YTApiCall(videoID) {
     return {
       tags: video.snippet.tags || [],
       topicCategories: video.topicDetails?.topicCategories || [],
+      description: video.snippet.description || "",
     };
   } catch (error) {
     console.error("Error Here:", error);
@@ -197,7 +199,7 @@ async function predict(title, description, tags, topicCategories) {
       "http://localhost:5000/search",
       {
         searchKey: title, // Send the title as the searchKey
-        descripti00on: description || "", // Send the description
+        description: description || "", // Send the description
         tags: tags || [], // Send tags as an array
         topic_categories: topicCategories || [], // Send topicCategories as an array
       },
