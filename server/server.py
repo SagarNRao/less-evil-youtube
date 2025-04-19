@@ -47,7 +47,7 @@ def review():
     topic_categories = input_data.get('topic_categories', [])
     # description = input_data.get('videoID')
 
-    print(input_data)
+    print(title)
 
     prediction, confidence = predict_distraction(
         title, description, tags, topic_categories)
