@@ -264,7 +264,7 @@ function lockSidebar(sideBar) {
   setInterval(checkForNewContent, 1000); // Check every second for new content
 }
 
-const API_KEY = "AIzaSyBCQnr8GmsG35VdPP4bh6H9cD6cmlQpqFo";
+const API_KEY = "AIzaSyCmhLp--zBH_ZIwfCKx8prox4qAyfc_Y8U";
 
 async function YTApiCall(videoID) {
   const url = `https://youtube.googleapis.com/youtube/v3/videos?part=topicDetails,snippet&id=${videoID}&key=${API_KEY}`;
