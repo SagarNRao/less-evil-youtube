@@ -78,7 +78,7 @@ def search(query):
                 "category": 27,
                 "thumbnail": "",
                 "tags": "",
-                "distracting": 0
+                "distracting": 1
             }])
 
             # Concatenate the new row with the existing DataFrame
@@ -105,14 +105,16 @@ def search(query):
 # for topic in gamingTopics:
 #     search(topic)
 
-mathsTopics = ["partial differentiation", "integration", "calculus", "laplace transform", "curve sketching", "derivatives", "maxima and minima" ]
+# mathsTopics = ["partial differentiation", "integration", "calculus", "laplace transform", "curve sketching", "derivatives", "maxima and minima" ]
 # agileTopics = ["Agile", "Scrum", "Scrum roles", "XP", "Kanban"]
 # IMLTopics = ["kmeans", "clustering", "PCA Analysis", "AI/ML", "Artificial Intelligence", "generative AI", "Random Forest",
 #              "Gradient Descent", "Decision Tree", "Confusion matrix", "Hyperparameter tuning", "Convolutional Neural Networks"]
 # progTopics = ["nextjs", "DBMS", "binary trees", ]
 # fitnessTopics = ["diet for bulking", "diet for cutting", "brain boosting foods", "how to get bigger shoulders", "how to get bigger arms"]
+animeTopics = ["jujutsu kaisen", "gojo", "annoying orange", "cat videos", "funny anime moments"]
 
-for topic in mathsTopics:
+
+for topic in animeTopics:
     search(topic)
 
 
