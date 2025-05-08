@@ -52,8 +52,8 @@ pipeline.fit(X_train, y_train)
 
 # Predict and evaluate
 y_pred = pipeline.predict(X_test)
-print('Classification Report:')
-print(classification_report(y_test, y_pred))
+# print('Classification Report:')
+# print(classification_report(y_test, y_pred))
 
 def predict_distraction(title, description, tags=None, topic_categories=None):
     """Function to predict if a video is distracting based on its title, description, tags, and topic categories"""
