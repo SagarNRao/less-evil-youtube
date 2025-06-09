@@ -302,7 +302,7 @@ async function predict(title, description, tags, topicCategories) {
 
   try {
     const response = await axios.post(
-      "http://your-app.onrender.com/search",
+      "http://less-evil-youtube.com/search",
       {
         searchKey: title, // Send the title as the searchKey
         description: description || "", // Send the description
@@ -340,7 +340,7 @@ async function myCustomFunction() {
     // Make an API call using axios
     try {
       const response = await axios.post(
-        "http://your-app.onrender.com/search",
+        "http://less-evil-youtube.com/search",
         {
           searchKey: searchTerm,
         },
