@@ -14,8 +14,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 # Load and preprocess data
 df = pd.read_csv('response_data.csv', encoding='latin1')
