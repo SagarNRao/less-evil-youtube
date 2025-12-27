@@ -120,7 +120,7 @@ function setupVideoDetection() {
 
       setTimeout(async () => {
         const sideBar = document.evaluate(
-          "/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[5]/div[2]/div/div[4]/ytd-watch-next-secondary-results-renderer/div[2]/ytd-item-section-renderer/div[3]",
+          "/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[4]/div[2]/div/div[5]/ytd-watch-next-secondary-results-renderer/div[2]",
           document,
           null,
           XPathResult.FIRST_ORDERED_NODE_TYPE,
@@ -128,8 +128,15 @@ function setupVideoDetection() {
         ).singleNodeValue;
 
         if (sideBar) {
+          console.log("Sidebar found");
           // Process initial videos in the sidebar
           const videos = sideBar.querySelectorAll("ytd-compact-video-renderer");
+
+          if (videos) {
+            console.log("No videos found in sidebar");
+            return;
+          }
+
           for (const video of videos) {
             const titleElement = video.querySelector("#video-title");
             if (titleElement) {
@@ -159,6 +166,9 @@ function setupVideoDetection() {
                 titleElement.style.color = "red";
                 titleElement.textContent = "⚠️ Distracting Content";
               }
+            }
+            else {
+              console.log("Title element not found for a video in sidebar");
             }
           }
 
