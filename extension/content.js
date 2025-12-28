@@ -84,7 +84,7 @@ function removeDistractionUIBlock() {
 
 function detectVideoPlayer() {
   const videoPlayer = document.evaluate(
-    "/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[5]/div[1]/div/div[1]/div[2]/div/div/ytd-player/div/div/div[1]/video",
+    "/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[4]/div[1]/div/div[1]/div[2]/div/div[2]/ytd-player/div/div/div[1]/video",
     document,
     null,
     XPathResult.FIRST_ORDERED_NODE_TYPE,
@@ -130,22 +130,39 @@ function setupVideoDetection() {
         if (sideBar) {
           console.log("Sidebar found");
           // Process initial videos in the sidebar
-          const videos = sideBar.querySelectorAll("ytd-compact-video-renderer");
+          // Updated selector for current YouTube sidebar (regular videos)
+          const videos = sideBar.querySelectorAll(
+            "yt-lockup-view-model[lockup]"
+          );
 
-          if (videos) {
+          if (!videos || videos.length === 0) {
             console.log("No videos found in sidebar");
             return;
           }
 
           for (const video of videos) {
-            const titleElement = video.querySelector("#video-title");
-            if (titleElement) {
-              const titleText = titleElement.textContent;
-              const link = video.querySelector("#thumbnail").href;
+            // Updated: title is inside an <a> with title attribute or text content
+            const titleElement = video.querySelector(
+              "a.yt-lockup-metadata-view-model__title, h3 a"
+            );
+            const thumbnailLink = video.querySelector(
+              "a.yt-lockup-view-model__content-image"
+            );
+
+            if (titleElement && thumbnailLink) {
+              const titleText =
+                titleElement.getAttribute("title") ||
+                titleElement.textContent.trim();
+              const link = thumbnailLink.href;
+
               console.log("Title:", titleText);
               console.log("Link:", link);
 
-              const videoId = link.split("v=")[1].split("&")[0];
+              const videoId = new URLSearchParams(new URL(link).search).get(
+                "v"
+              );
+              if (!videoId) continue;
+
               const videoData = await YTApiCall(videoId);
               console.log(videoId);
               const tags = videoData.tags;
@@ -166,8 +183,7 @@ function setupVideoDetection() {
                 titleElement.style.color = "red";
                 titleElement.textContent = "⚠️ Distracting Content";
               }
-            }
-            else {
+            } else {
               console.log("Title element not found for a video in sidebar");
             }
           }
@@ -175,7 +191,7 @@ function setupVideoDetection() {
           // Prevent sidebar from loading new videos
           lockSidebar(sideBar);
         } else {
-          console.log("Sidebar not found");
+          console.log("Sidebar not found553");
         }
       }, 5000);
     }
