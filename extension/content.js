@@ -1,20 +1,18 @@
 // import axios from "axios";
 
-const searchButton = document.evaluate(
-  "/html/body/ytd-app/div[1]/div[2]/ytd-masthead/div[4]/div[2]/yt-searchbox/button",
-  document,
-  null,
-  XPathResult.FIRST_ORDERED_NODE_TYPE,
-  null
-).singleNodeValue;
+// ---------------------------------------------------------------------------
+// SEARCH ELEMENTS
+// YouTube's current DOM (2025):
+//   - Search input:  input#search  (name="search_query", inside #search-input slot)
+//   - Search button: button#search-icon-legacy  (inside ytd-searchbox)
+// ---------------------------------------------------------------------------
+const searchButton = document.querySelector(
+  "ytd-searchbox button#search-icon-legacy, ytd-searchbox button[type='submit']"
+);
 
-const searchInput = document.evaluate(
-  "/html/body/ytd-app/div[1]/div[2]/ytd-masthead/div[4]/div[2]/yt-searchbox/div[1]/form/input",
-  document,
-  null,
-  XPathResult.FIRST_ORDERED_NODE_TYPE,
-  null
-).singleNodeValue;
+const searchInput = document.querySelector(
+  "input#search[name='search_query']"
+);
 
 let watchingShorts = 0;
 
@@ -48,7 +46,6 @@ async function distractionUIBlock() {
 
   console.log("Undistracting");
   const overlay = document.createElement("div");
-  // overlay.classList.add("overlay");
   document.body.appendChild(overlay);
   overlay.id = "distraction-overlay";
 
@@ -56,7 +53,7 @@ async function distractionUIBlock() {
   overlay.style.top = "56px"; // Leave space for the header
   overlay.style.left = "0";
   overlay.style.width = "100%";
-  overlay.style.height = "calc(100% - 56px)"; // Adjust height to account for header
+  overlay.style.height = "calc(100% - 56px)";
   overlay.style.backgroundColor = "rgb(0, 0, 0)";
   overlay.style.zIndex = "9999";
   overlay.style.display = "flex";
@@ -69,9 +66,6 @@ async function distractionUIBlock() {
   message.style.fontFamily = "Geist, sans-serif";
   message.style.fontSize = "2rem";
   overlay.appendChild(message);
-
-  // Log the image URL to verify it's correct
-  console.log("Image URL:", image.src);
 }
 
 function removeDistractionUIBlock() {
@@ -82,14 +76,13 @@ function removeDistractionUIBlock() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// VIDEO PLAYER DETECTION
+// YouTube's current DOM: <video> is always a descendant of ytd-player.
+// Using a stable querySelector instead of a brittle absolute XPath.
+// ---------------------------------------------------------------------------
 function detectVideoPlayer() {
-  const videoPlayer = document.evaluate(
-    "/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[4]/div[1]/div/div[1]/div[2]/div/div[2]/ytd-player/div/div/div[1]/video",
-    document,
-    null,
-    XPathResult.FIRST_ORDERED_NODE_TYPE,
-    null
-  ).singleNodeValue;
+  const videoPlayer = document.querySelector("ytd-player video");
 
   if (videoPlayer) {
     console.log("Video player detected");
@@ -99,41 +92,42 @@ function detectVideoPlayer() {
       watchingShorts = 1;
       shortsPage();
     }
-    // setWatchingIndividualVideo("watchingVideo", 1);
   } else {
     console.log("No video player detected");
     setTimeout(() => {
       detectVideoPlayer();
     }, 3000);
-    // setWatchingIndividualVideo("watchingVideo", 0);
   }
 }
 
+// ---------------------------------------------------------------------------
+// SIDEBAR DETECTION
+// YouTube's current DOM: ytd-watch-next-secondary-results-renderer contains
+// the sidebar. The inner list lives in #items or div[id='items'] inside it.
+// Video cards use yt-lockup-view-model (still current as of 2025).
+// ---------------------------------------------------------------------------
 function setupVideoDetection() {
-  // FOR SIDEBAR
   detectVideoPlayer();
 
-  const observer = new MutationObserver((mutations) => {
+  let lastUrl = window.location.href;
+
+  const observer = new MutationObserver(() => {
     if (window.location.href !== lastUrl) {
       lastUrl = window.location.href;
       detectVideoPlayer();
 
       setTimeout(async () => {
-        const sideBar = document.evaluate(
-          "/html/body/ytd-app/div[1]/ytd-page-manager/ytd-watch-flexy/div[4]/div[2]/div/div[5]/ytd-watch-next-secondary-results-renderer/div[2]",
-          document,
-          null,
-          XPathResult.FIRST_ORDERED_NODE_TYPE,
-          null
-        ).singleNodeValue;
+        // Stable selector: the secondary results renderer holds the sidebar
+        const sideBar = document.querySelector(
+          "ytd-watch-next-secondary-results-renderer #items, " +
+          "ytd-watch-next-secondary-results-renderer div#items"
+        );
 
         if (sideBar) {
           console.log("Sidebar found");
-          // Process initial videos in the sidebar
-          // Updated selector for current YouTube sidebar (regular videos)
-          const videos = sideBar.querySelectorAll(
-            "yt-lockup-view-model[lockup]"
-          );
+
+          // yt-lockup-view-model is still the current card element (2025)
+          const videos = sideBar.querySelectorAll("yt-lockup-view-model");
 
           if (!videos || videos.length === 0) {
             console.log("No videos found in sidebar");
@@ -141,7 +135,7 @@ function setupVideoDetection() {
           }
 
           for (const video of videos) {
-            // Updated: title is inside an <a> with title attribute or text content
+            // Title anchor — same selector as before, still valid
             const titleElement = video.querySelector(
               "a.yt-lockup-metadata-view-model__title, h3 a"
             );
@@ -158,9 +152,7 @@ function setupVideoDetection() {
               console.log("Title:", titleText);
               console.log("Link:", link);
 
-              const videoId = new URLSearchParams(new URL(link).search).get(
-                "v"
-              );
+              const videoId = new URLSearchParams(new URL(link).search).get("v");
               if (!videoId) continue;
 
               const videoData = await YTApiCall(videoId);
@@ -173,12 +165,7 @@ function setupVideoDetection() {
               console.log("Topic Categories:", topicCategories);
 
               if (
-                (await predict(
-                  titleText,
-                  description,
-                  tags,
-                  topicCategories
-                )) === 1
+                (await predict(titleText, description, tags, topicCategories)) === 1
               ) {
                 titleElement.style.color = "red";
                 titleElement.textContent = "⚠️ Distracting Content";
@@ -188,16 +175,13 @@ function setupVideoDetection() {
             }
           }
 
-          // Prevent sidebar from loading new videos
           lockSidebar(sideBar);
         } else {
-          console.log("Sidebar not found553");
+          console.log("Sidebar not found");
         }
       }, 5000);
     }
   });
-
-  let lastUrl = window.location.href;
 
   observer.observe(document.body, {
     subtree: true,
@@ -208,17 +192,22 @@ function setupVideoDetection() {
 function lockSidebar(sideBar) {
   console.log("Locking sidebar to prevent reloading new videos");
 
-  // Option 1: Disconnect the sidebar's dynamic loading by removing new nodes
+  const initialVideoCount = sideBar.querySelectorAll(
+    "yt-lockup-view-model, ytd-compact-video-renderer"
+  ).length;
+
+  // Remove newly added video nodes
   const sidebarObserver = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       if (mutation.addedNodes.length) {
         mutation.addedNodes.forEach((node) => {
           if (
             node.nodeType === Node.ELEMENT_NODE &&
-            node.matches("ytd-compact-video-renderer")
+            (node.matches("ytd-compact-video-renderer") ||
+              node.matches("yt-lockup-view-model"))
           ) {
             console.log("Prevented new video from being added to sidebar");
-            node.remove(); // Remove newly added video elements
+            node.remove();
           }
         });
       }
@@ -230,19 +219,21 @@ function lockSidebar(sideBar) {
     subtree: true,
   });
 
-  // Option 2: Disable infinite scroll by preventing scroll events from triggering new content
+  // Block scroll-triggered lazy loading
   sideBar.addEventListener(
     "scroll",
     (event) => {
-      event.stopPropagation(); // Prevent scroll events from bubbling up
+      event.stopPropagation();
       console.log("Blocked sidebar scroll event");
     },
     { passive: false }
   );
 
-  // Option 3: Clear any dynamically added content after initial load
+  // Periodic cleanup of any excess videos that slip through
   const checkForNewContent = () => {
-    const newVideos = sideBar.querySelectorAll("ytd-compact-video-renderer");
+    const newVideos = sideBar.querySelectorAll(
+      "yt-lockup-view-model, ytd-compact-video-renderer"
+    );
     if (newVideos.length > initialVideoCount) {
       console.log("Detected new videos; removing excess");
       Array.from(newVideos)
@@ -251,10 +242,7 @@ function lockSidebar(sideBar) {
     }
   };
 
-  const initialVideoCount = sideBar.querySelectorAll(
-    "ytd-compact-video-renderer"
-  ).length;
-  setInterval(checkForNewContent, 1000); // Check every second for new content
+  setInterval(checkForNewContent, 1000);
 }
 
 const API_KEY = "AIzaSyCmhLp--zBH_ZIwfCKx8prox4qAyfc_Y8U";
@@ -288,7 +276,7 @@ async function predict(title, description, tags, topicCategories) {
   let distracting = 0;
 
   if (title === "⚠️ Distracting Content") {
-    distracting = 0; // initially 1
+    distracting = 0;
     return distracting;
   }
 
@@ -296,10 +284,10 @@ async function predict(title, description, tags, topicCategories) {
     const response = await axios.post(
       "https://less-evil-youtube.onrender.com/search",
       {
-        searchKey: title, // Send the title as the searchKey
-        description: description || "", // Send the description
-        tags: tags || [], // Send tags as an array
-        topic_categories: topicCategories || [], // Send topicCategories as an array
+        searchKey: title,
+        description: description || "",
+        tags: tags || [],
+        topic_categories: topicCategories || [],
       },
       {
         headers: {
@@ -311,9 +299,9 @@ async function predict(title, description, tags, topicCategories) {
 
     if (response.data.message == true) {
       console.log(input, "is distracting");
-      distracting = 1; //initially 1
+      distracting = 1;
     } else {
-      distracting = 0; // initally 0
+      distracting = 0;
     }
   } catch (error) {
     console.error("Error:", error);
@@ -323,14 +311,11 @@ async function predict(title, description, tags, topicCategories) {
 }
 
 async function myCustomFunction() {
-  // Your custom logic here
   console.log("Custom function executed before YouTube search.");
-  // Example: modify the search term.
   if (searchInput) {
     const searchTerm = searchInput.value;
     console.log(searchTerm);
 
-    // Make an API call using axios
     try {
       const response = await axios.post(
         "https://less-evil-youtube.onrender.com/search",
@@ -359,20 +344,18 @@ async function myCustomFunction() {
   }
 }
 
-// modals for shorts
+// ---------------------------------------------------------------------------
+// SHORTS POPUP
+// ---------------------------------------------------------------------------
 function showCustomPopup(shortsUrl) {
-  // Remove existing popup if any
   const existingPopup = document.querySelector(".custom-shorts-popup");
   if (existingPopup) existingPopup.remove();
 
-  // Extract video ID from the Shorts URL (e.g., /shorts/VIDEO_ID)
   const videoId = shortsUrl.match(/\/shorts\/([^?]+)/)?.[1];
-  if (!videoId) return; // Exit if no video ID found
+  if (!videoId) return;
 
-  // Create popup element with embedded YouTube player
   const popup = document.createElement("div");
   popup.className = "custom-shorts-popup";
-  // Add styles for the popup overlay
   popup.style.position = "fixed";
   popup.style.top = "0";
   popup.style.left = "0";
@@ -385,7 +368,7 @@ function showCustomPopup(shortsUrl) {
   popup.style.zIndex = "10000";
 
   popup.innerHTML = `
-       <div class="popup-content" id="modalForShorts">
+    <div class="popup-content" id="modalForShorts">
       <h2>YouTube Short</h2>
       <div class="flex items-center gap-4">
         <div
@@ -407,14 +390,11 @@ function showCustomPopup(shortsUrl) {
             style="position: absolute; top: 0; left: 0"
           ></iframe>
         </div>
-       
-
         <div />
       </div>
     </div>
-    `;
+  `;
 
-  // Add click event listener to close popup when clicking outside
   popup.addEventListener("click", (event) => {
     if (event.target === popup) {
       popup.remove();
@@ -423,77 +403,60 @@ function showCustomPopup(shortsUrl) {
   document.body.appendChild(popup);
 }
 
-// Function to intercept Shorts clicks
+// ---------------------------------------------------------------------------
+// SHORTS CLICK INTERCEPTION
+// ---------------------------------------------------------------------------
 function interceptShorts() {
   document.addEventListener(
     "click",
     (event) => {
-      // Find the closest element that might be a Short
       const shortsLink = event.target.closest('a[href*="/shorts/"]');
       if (shortsLink) {
-        event.preventDefault(); // Prevent default navigation
-        event.stopPropagation(); // Stop event bubbling
-        showCustomPopup(shortsLink.href); // Pass the Short's URL to the popup
+        event.preventDefault();
+        event.stopPropagation();
+        showCustomPopup(shortsLink.href);
       }
     },
     true
-  ); // Use capture phase to catch the click early
+  );
 }
 
-// Initialize when the page loads
 document.addEventListener("DOMContentLoaded", interceptShorts);
 
-// Watch for dynamically loaded content
 const observer = new MutationObserver(() => {
   interceptShorts();
 });
 observer.observe(document.body, { childList: true, subtree: true });
 
+// ---------------------------------------------------------------------------
+// SHORTS PAGE — limit to single short
+// YouTube's current Shorts DOM: ytd-shorts > div#shorts-inner-container > div
+// The old absolute XPath broke; use a stable querySelector instead.
+// ---------------------------------------------------------------------------
 function shortsPage() {
   console.log(window.location.href);
   const shortsUrl = window.location.href;
+
   if (shortsUrl.includes("/shorts/")) {
     watchingShorts = 1;
-
-    // showCustomPopup(shortsUrl);
     console.log("Shorts page detected");
 
-    const firstShort = document.evaluate(
-      "/html/body/ytd-app/div[1]/ytd-page-manager/ytd-shorts/div[3]/div[2]/div[1]",
-      document,
-      null,
-      XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
-      null
-    );
-
-    // Function to remove non-first shorts
     const removeOtherShorts = () => {
-      // Get all shorts containers
-      const shorts = document.evaluate(
-        "/html/body/ytd-app/div[1]/ytd-page-manager/ytd-shorts/div[3]/div[2]/div",
-        document,
-        null,
-        XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
-        null
+      // Current selector for individual short containers inside the reel
+      const shorts = document.querySelectorAll(
+        "ytd-shorts #shorts-inner-container > div, " +
+        "ytd-reel-video-renderer"
       );
 
-      // Loop through all found shorts containers
-      for (let i = 0; i < shorts.snapshotLength; i++) {
-        const short = shorts.snapshotItem(i);
-        // Remove all shorts except the first one (index 1)
-        // if (short && !short.matches("div[1]")) {
-        //   short.remove();
-        // }
-        if (short && i !== 0) {
+      shorts.forEach((short, i) => {
+        if (i !== 0) {
           short.remove();
         }
-      }
+      });
     };
 
-    // Initial removal
     removeOtherShorts();
 
-    // Set up observer to continuously remove other shorts
     const shortsObserver = new MutationObserver(removeOtherShorts);
     shortsObserver.observe(document.body, {
       childList: true,
@@ -502,14 +465,15 @@ function shortsPage() {
   }
 }
 
-// Set up observer to watch for URL changes and check for /shorts
+// ---------------------------------------------------------------------------
+// URL CHANGE OBSERVER — watch for navigation to /shorts
+// ---------------------------------------------------------------------------
 let lastUrl = window.location.href;
 const shortsObserver = new MutationObserver(() => {
   if (window.location.href !== lastUrl) {
     lastUrl = window.location.href;
     if (window.location.href.includes("/shorts")) {
       console.log("OBSERVER ", window.location.href);
-
       shortsPage();
     }
   }
