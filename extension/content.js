@@ -175,7 +175,8 @@ function setupVideoDetection() {
             }
           }
 
-          lockSidebar(sideBar);
+          // previously: lockSidebar(sideBar);
+          // sidebar locking removed — allow YouTube to load sidebar videos normally
         } else {
           console.log("Sidebar not found");
         }
@@ -190,74 +191,23 @@ function setupVideoDetection() {
 }
 
 function lockSidebar(sideBar) {
-  console.log("Locking sidebar to prevent reloading new videos");
-
-  const initialVideoCount = sideBar.querySelectorAll(
-    "yt-lockup-view-model, ytd-compact-video-renderer"
-  ).length;
-
-  // Remove newly added video nodes
-  const sidebarObserver = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      if (mutation.addedNodes.length) {
-        mutation.addedNodes.forEach((node) => {
-          if (
-            node.nodeType === Node.ELEMENT_NODE &&
-            (node.matches("ytd-compact-video-renderer") ||
-              node.matches("yt-lockup-view-model"))
-          ) {
-            console.log("Prevented new video from being added to sidebar");
-            node.remove();
-          }
-        });
-      }
-    }
-  });
-
-  sidebarObserver.observe(sideBar, {
-    childList: true,
-    subtree: true,
-  });
-
-  // Block scroll-triggered lazy loading
-  sideBar.addEventListener(
-    "scroll",
-    (event) => {
-      event.stopPropagation();
-      console.log("Blocked sidebar scroll event");
-    },
-    { passive: false }
-  );
-
-  // Periodic cleanup of any excess videos that slip through
-  const checkForNewContent = () => {
-    const newVideos = sideBar.querySelectorAll(
-      "yt-lockup-view-model, ytd-compact-video-renderer"
-    );
-    if (newVideos.length > initialVideoCount) {
-      console.log("Detected new videos; removing excess");
-      Array.from(newVideos)
-        .slice(initialVideoCount)
-        .forEach((video) => video.remove());
-    }
-  };
-
-  setInterval(checkForNewContent, 1000);
+  // No-op: sidebar locking/removal disabled to allow recommended videos to load normally
+  console.log("lockSidebar disabled — not removing sidebar videos");
 }
 
-const API_KEY = "AIzaSyCmhLp--zBH_ZIwfCKx8prox4qAyfc_Y8U";
+const BACKEND_URL = "https://less-evil-youtube.onrender.com";
 
 async function YTApiCall(videoID) {
-  const url = `https://youtube.googleapis.com/youtube/v3/videos?part=topicDetails,snippet&id=${videoID}&key=${API_KEY}`;
+  // YouTube API key is kept server-side; we proxy through our own backend.
+  const url = `${BACKEND_URL}/video_data?videoId=${encodeURIComponent(videoID)}`;
 
   try {
     const response = await axios.get(url);
-    const video = response.data.items[0];
     console.log("HERE", response.data);
     return {
-      tags: video.snippet.tags || [],
-      topicCategories: video.topicDetails?.topicCategories || [],
-      description: video.snippet.description || "",
+      tags: response.data.tags || [],
+      topicCategories: response.data.topicCategories || [],
+      description: response.data.description || "",
     };
   } catch (error) {
     console.error("Error Here:", error);
