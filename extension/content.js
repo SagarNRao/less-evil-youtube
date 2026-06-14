@@ -2,7 +2,7 @@
 
 // ---------------------------------------------------------------------------
 // SEARCH ELEMENTS
-// YouTube's current DOM (2025):
+// YouTube's current DOM (2025/2026):
 //   - Search input:  input#search  (name="search_query", inside #search-input slot)
 //   - Search button: button#search-icon-legacy  (inside ytd-searchbox)
 // ---------------------------------------------------------------------------
@@ -79,7 +79,6 @@ function removeDistractionUIBlock() {
 // ---------------------------------------------------------------------------
 // VIDEO PLAYER DETECTION
 // YouTube's current DOM: <video> is always a descendant of ytd-player.
-// Using a stable querySelector instead of a brittle absolute XPath.
 // ---------------------------------------------------------------------------
 function detectVideoPlayer() {
   const videoPlayer = document.querySelector("ytd-player video");
@@ -102,104 +101,255 @@ function detectVideoPlayer() {
 
 // ---------------------------------------------------------------------------
 // SIDEBAR DETECTION
-// YouTube's current DOM: ytd-watch-next-secondary-results-renderer contains
-// the sidebar. The inner list lives in #items or div[id='items'] inside it.
-// Video cards use yt-lockup-view-model (still current as of 2025).
+//
+// YouTube's 2025/2026 DOM for the watch-page sidebar:
+//   ytd-watch-next-secondary-results-renderer
+//     └─ ytd-compact-video-renderer   ← classic compact cards (still present)
+//     └─ yt-lockup-view-model         ← newer card format
+//
+// Title / link selectors inside yt-lockup-view-model (new UI):
+//   h3.yt-lockup-metadata-view-model__title > a
+//   OR  a[class*="lockup"][class*="title"]
+//
+// Inside ytd-compact-video-renderer (classic):
+//   a#video-title  (carries both title text and /watch?v= href)
+//
+// Broadest fallback: any <a href*="/watch?v="> inside the card.
 // ---------------------------------------------------------------------------
+
+/**
+ * Extract { videoId, titleText, titleEl } from a sidebar card element.
+ * Works for both yt-lockup-view-model and ytd-compact-video-renderer.
+ */
+function extractCardInfo(card) {
+  // Helper: pull videoId from a URL string, returns null if not a watch link
+  function getVideoId(href) {
+    if (!href || !href.includes("/watch")) return null;
+    try {
+      return new URLSearchParams(new URL(href, location.origin).search).get("v");
+    } catch (_) { return null; }
+  }
+
+  // Helper: does this element look like a real video title?
+  // Rejects duration stamps ("1:43", "12:05"), empty strings, and very short
+  // strings that are clearly not titles.
+  function looksLikeTitle(text) {
+    if (!text || text.length < 4) return false;
+    // Duration pattern: optional hours, then mm:ss  e.g. "1:43" "1:02:45"
+    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(text.trim())) return false;
+    return true;
+  }
+
+  // ── 1. yt-lockup-view-model (new UI) ──────────────────────────────────────
+  // The title anchor sits in the metadata section, explicitly marked with
+  // a class containing both "lockup" and "title" / "metadata".
+  const lockupCandidates = [
+    card.querySelector("h3.yt-lockup-metadata-view-model__title a"),
+    card.querySelector("a.yt-lockup-metadata-view-model__title"),
+    card.querySelector(".yt-lockup-metadata-view-model__title a"),
+    // ── 2. ytd-compact-video-renderer (classic UI) ────────────────────────
+    card.querySelector("a#video-title"),
+    card.querySelector("#video-title"),
+  ];
+
+  let titleEl = null;
+  let videoId = null;
+
+  for (const el of lockupCandidates) {
+    if (!el) continue;
+    const id = getVideoId(el.href);
+    if (!id) continue;
+    const text =
+      el.getAttribute("title") ||
+      el.getAttribute("aria-label") ||
+      el.textContent.trim();
+    if (!looksLikeTitle(text)) continue;
+    titleEl = el;
+    videoId = id;
+    break;
+  }
+
+  // ── 3. Broadest fallback: any watch-link whose visible text looks like a title
+  if (!titleEl) {
+    const allWatchLinks = card.querySelectorAll('a[href*="/watch?v="]');
+    for (const el of allWatchLinks) {
+      const id = getVideoId(el.href);
+      if (!id) continue;
+      const text =
+        el.getAttribute("title") ||
+        el.getAttribute("aria-label") ||
+        el.textContent.trim();
+      if (!looksLikeTitle(text)) continue;
+      titleEl = el;
+      videoId = id;
+      break;
+    }
+  }
+
+  if (!titleEl || !videoId) return null;
+
+  const titleText =
+    titleEl.getAttribute("title") ||
+    titleEl.getAttribute("aria-label") ||
+    titleEl.textContent.trim();
+
+  console.log("[LE] extractCardInfo → id:", videoId, "title:", titleText);
+  return { videoId, titleText, titleEl };
+}
+
+/**
+ * Visually mark a sidebar card as distracting.
+ * Overlays a warning banner over the thumbnail and colours the title red —
+ * without removing the element so YouTube's own JS stays happy.
+ */
+function markCardDistracting(card, titleEl) {
+  card.dataset.leProcessed = "distracting";
+
+  // Warn the title
+  titleEl.style.color = "#ff4444";
+  titleEl.dataset.originalTitle = titleEl.dataset.originalTitle || titleEl.textContent.trim();
+  titleEl.textContent = "\u26A0\uFE0F Distracting Content";
+
+  // Dim the thumbnail
+  const thumb =
+    card.querySelector("a.yt-lockup-view-model__content-image") ||
+    card.querySelector("a#thumbnail") ||
+    card.querySelector("ytd-thumbnail");
+
+  if (thumb && !thumb.querySelector(".le-distraction-badge")) {
+    thumb.style.position = "relative";
+    const badge = document.createElement("div");
+    badge.className = "le-distraction-badge";
+    badge.style.cssText = [
+      "position:absolute",
+      "inset:0",
+      "background:rgba(0,0,0,0.55)",
+      "display:flex",
+      "align-items:center",
+      "justify-content:center",
+      "pointer-events:none",
+      "z-index:10",
+      "font-size:1.4rem",
+    ].join(";");
+    badge.textContent = "\u26A0\uFE0F";
+    thumb.appendChild(badge);
+  }
+}
+
+/**
+ * Process one sidebar card: fetch video metadata → run model → mark if distracting.
+ */
+async function processSidebarCard(card) {
+  // Skip if already handled in any state
+  if (card.dataset.leProcessed) return;
+  // Claim the card immediately to prevent double-processing from concurrent observer calls
+  card.dataset.leProcessed = "pending";
+
+  const info = extractCardInfo(card);
+  if (!info) {
+    card.dataset.leProcessed = "no-id";
+    return;
+  }
+
+  const { videoId, titleText, titleEl } = info;
+  console.log("[LE] Sidebar card →", videoId, titleText);
+
+  const videoData = await YTApiCall(videoId);
+  const { tags, topicCategories, description } = videoData;
+
+  const isDistracting = await predict(titleText, description, tags, topicCategories);
+  if (isDistracting === 1) {
+    markCardDistracting(card, titleEl);
+  } else {
+    card.dataset.leProcessed = "ok";
+  }
+}
+
+/**
+ * Scan the sidebar for any unprocessed cards and kick off processSidebarCard()
+ * for each one. Safe to call repeatedly — the leProcessed flag prevents re-entry.
+ */
+function scanSidebar() {
+  const cards = document.querySelectorAll(
+    // New card format
+    "ytd-watch-next-secondary-results-renderer yt-lockup-view-model:not([data-le-processed])," +
+    // Classic compact card format
+    " ytd-watch-next-secondary-results-renderer ytd-compact-video-renderer:not([data-le-processed])"
+  );
+
+  if (cards.length === 0) return;
+  console.log("[LE] Found " + cards.length + " unprocessed sidebar card(s)");
+
+  for (const card of cards) {
+    processSidebarCard(card); // async, but flag is set synchronously so no double-run
+  }
+}
+
+/**
+ * Attach a MutationObserver to the sidebar container so we catch cards that
+ * YouTube lazy-loads as the user scrolls.
+ */
+function attachSidebarObserver() {
+  const sidebar = document.querySelector("ytd-watch-next-secondary-results-renderer");
+  if (!sidebar) return false;
+
+  // Initial pass over cards already in the DOM
+  scanSidebar();
+
+  const sidebarMO = new MutationObserver(() => scanSidebar());
+  sidebarMO.observe(sidebar, { childList: true, subtree: true });
+  console.log("[LE] Sidebar observer attached");
+  return true;
+}
+
+/**
+ * Retry attaching the sidebar observer until the sidebar element appears.
+ * YouTube renders the sidebar asynchronously after SPA navigation.
+ */
+function waitForSidebarAndAttach(attempts) {
+  attempts = attempts || 0;
+  if (attachSidebarObserver()) return;
+  if (attempts > 30) {
+    console.warn("[LE] Sidebar never appeared — giving up");
+    return;
+  }
+  setTimeout(function() { waitForSidebarAndAttach(attempts + 1); }, 500);
+}
+
 function setupVideoDetection() {
   detectVideoPlayer();
 
   let lastUrl = window.location.href;
 
-  const observer = new MutationObserver(() => {
+  // If the extension loads on a watch page, start looking for the sidebar immediately
+  if (location.pathname === "/watch") {
+    waitForSidebarAndAttach();
+  }
+
+  // Watch for YouTube SPA navigations
+  const navObserver = new MutationObserver(() => {
     if (window.location.href !== lastUrl) {
       lastUrl = window.location.href;
       detectVideoPlayer();
 
-      setTimeout(async () => {
-        // Stable selector: the secondary results renderer holds the sidebar
-        const sideBar = document.querySelector(
-          "ytd-watch-next-secondary-results-renderer #items, " +
-          "ytd-watch-next-secondary-results-renderer div#items"
-        );
-
-        if (sideBar) {
-          console.log("Sidebar found");
-
-          // yt-lockup-view-model is still the current card element (2025)
-          const videos = sideBar.querySelectorAll("yt-lockup-view-model");
-
-          if (!videos || videos.length === 0) {
-            console.log("No videos found in sidebar");
-            return;
-          }
-
-          for (const video of videos) {
-            // Title anchor — same selector as before, still valid
-            const titleElement = video.querySelector(
-              "a.yt-lockup-metadata-view-model__title, h3 a"
-            );
-            const thumbnailLink = video.querySelector(
-              "a.yt-lockup-view-model__content-image"
-            );
-
-            if (titleElement && thumbnailLink) {
-              const titleText =
-                titleElement.getAttribute("title") ||
-                titleElement.textContent.trim();
-              const link = thumbnailLink.href;
-
-              console.log("Title:", titleText);
-              console.log("Link:", link);
-
-              const videoId = new URLSearchParams(new URL(link).search).get("v");
-              if (!videoId) continue;
-
-              const videoData = await YTApiCall(videoId);
-              console.log(videoId);
-              const tags = videoData.tags;
-              const topicCategories = videoData.topicCategories;
-              const description = videoData.description;
-
-              console.log("Tags:", tags);
-              console.log("Topic Categories:", topicCategories);
-
-              if (
-                (await predict(titleText, description, tags, topicCategories)) === 1
-              ) {
-                titleElement.style.color = "red";
-                titleElement.textContent = "⚠️ Distracting Content";
-              }
-            } else {
-              console.log("Title element not found for a video in sidebar");
-            }
-          }
-
-          // previously: lockSidebar(sideBar);
-          // sidebar locking removed — allow YouTube to load sidebar videos normally
-        } else {
-          console.log("Sidebar not found");
-        }
-      }, 5000);
+      if (location.pathname === "/watch") {
+        // Clear stale processed flags from the previous page's cards
+        document.querySelectorAll("[data-le-processed]").forEach(function(el) {
+          delete el.dataset.leProcessed;
+        });
+        waitForSidebarAndAttach();
+      }
     }
   });
 
-  observer.observe(document.body, {
-    subtree: true,
-    childList: true,
-  });
-}
-
-function lockSidebar(sideBar) {
-  // No-op: sidebar locking/removal disabled to allow recommended videos to load normally
-  console.log("lockSidebar disabled — not removing sidebar videos");
+  navObserver.observe(document.body, { subtree: true, childList: true });
 }
 
 const BACKEND_URL = "https://less-evil-youtube.onrender.com";
 
 async function YTApiCall(videoID) {
   // YouTube API key is kept server-side; we proxy through our own backend.
-  const url = `${BACKEND_URL}/video_data?videoId=${encodeURIComponent(videoID)}`;
+  const url = BACKEND_URL + "/video_data?videoId=" + encodeURIComponent(videoID);
 
   try {
     const response = await axios.get(url);
@@ -214,6 +364,7 @@ async function YTApiCall(videoID) {
     return {
       tags: [],
       topicCategories: [],
+      description: "",
     };
   }
 }
@@ -222,17 +373,14 @@ async function YTApiCall(videoID) {
 setupVideoDetection();
 
 async function predict(title, description, tags, topicCategories) {
-  const input = title + " " + description;
-  let distracting = 0;
-
-  if (title === "⚠️ Distracting Content") {
-    distracting = 0;
-    return distracting;
+  // Guard: already-marked cards won't have their original title here, skip them
+  if (title === "\u26A0\uFE0F Distracting Content") {
+    return 0;
   }
 
   try {
     const response = await axios.post(
-      "https://less-evil-youtube.onrender.com/search",
+      BACKEND_URL + "/search",
       {
         searchKey: title,
         description: description || "",
@@ -246,18 +394,11 @@ async function predict(title, description, tags, topicCategories) {
       }
     );
     console.log("Success:", response.data);
-
-    if (response.data.message == true) {
-      console.log(input, "is distracting");
-      distracting = 1;
-    } else {
-      distracting = 0;
-    }
+    return response.data.message === true ? 1 : 0;
   } catch (error) {
     console.error("Error:", error);
+    return 0;
   }
-
-  return distracting;
 }
 
 async function myCustomFunction() {
@@ -268,7 +409,7 @@ async function myCustomFunction() {
 
     try {
       const response = await axios.post(
-        "https://less-evil-youtube.onrender.com/search",
+        BACKEND_URL + "/search",
         {
           searchKey: searchTerm,
         },
@@ -280,7 +421,7 @@ async function myCustomFunction() {
       );
       console.log("Success:", response.data);
 
-      if (response.data.message == true) {
+      if (response.data.message === true) {
         console.log(searchTerm, " is distracting");
         searchedForDistracting = 1;
         distractionUIBlock();
@@ -380,8 +521,6 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 // ---------------------------------------------------------------------------
 // SHORTS PAGE — limit to single short
-// YouTube's current Shorts DOM: ytd-shorts > div#shorts-inner-container > div
-// The old absolute XPath broke; use a stable querySelector instead.
 // ---------------------------------------------------------------------------
 function shortsPage() {
   console.log(window.location.href);
@@ -392,7 +531,6 @@ function shortsPage() {
     console.log("Shorts page detected");
 
     const removeOtherShorts = () => {
-      // Current selector for individual short containers inside the reel
       const shorts = document.querySelectorAll(
         "ytd-shorts #shorts-inner-container > div, " +
         "ytd-reel-video-renderer"

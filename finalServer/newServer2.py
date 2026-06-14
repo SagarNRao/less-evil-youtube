@@ -151,7 +151,12 @@ def review():
         tags = input_data.get('tags', [])
         topic_categories = input_data.get('topic_categories', [])
 
-        print(f"Received title: {title}")
+        print(f"--- /search payload ---")
+        print(f"  title:       {title!r}")
+        print(f"  description: {description[:120]!r}" + ("..." if len(description) > 120 else ""))
+        print(f"  tags:        {tags[:5]}" + (" (+more)" if len(tags) > 5 else ""))
+        print(f"  categories:  {topic_categories}")
+        print(f"-----------------------")
 
         # Call prediction function
         prediction = predict_distraction(title, description, tags, topic_categories)
