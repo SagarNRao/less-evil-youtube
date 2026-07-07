@@ -8,6 +8,8 @@ A client-side Chrome extension paired with a machine learning backend designed t
 
 Watch the feature demonstration and execution loop play directly inside GitHub:
 
+https://github.com/user-attachments/assets/374c8651-2a15-4bcd-90a5-41f39fdb89a5
+
 <video src="./SideBar.mp4" controls width="100%">
   Your browser does not support the video tag.
 </video>
