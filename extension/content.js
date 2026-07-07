@@ -255,13 +255,100 @@ async function processSidebarCard(card) {
   console.log("[LE] Sidebar card →", videoId, titleText);
 
   const videoData = await YTApiCall(videoId);
-  const { tags, topicCategories, description } = videoData;
+  const { tags, topicCategories, description, channelTitle, channelId } = videoData;
 
   const isDistracting = await predict(titleText, description, tags, topicCategories);
   if (isDistracting === 1) {
     markCardDistracting(card, titleEl);
   } else {
     card.dataset.leProcessed = "ok";
+  }
+
+  // Let users flag videos the model missed (or confirm ones it caught).
+  addReportButton(card, {
+    videoId,
+    title: titleText,
+    description,
+    tags,
+    topicCategories,
+    channelName: channelTitle,
+    channelId,
+  });
+}
+
+/**
+ * Adds a small "report as distracting" flag to a sidebar card's thumbnail.
+ * Reports feed into the monthly model retrain — see /report on the backend.
+ */
+function addReportButton(card, videoInfo) {
+  const thumb =
+    card.querySelector("a.yt-lockup-view-model__content-image") ||
+    card.querySelector("a#thumbnail") ||
+    card.querySelector("ytd-thumbnail");
+
+  if (!thumb || thumb.querySelector(".le-report-button")) return;
+
+  thumb.style.position = thumb.style.position || "relative";
+
+  const button = document.createElement("button");
+  button.className = "le-report-button";
+  button.title = "Report as distracting";
+  button.textContent = "\u{1F6A9}";
+  button.style.cssText = [
+    "position:absolute",
+    "top:4px",
+    "right:4px",
+    "z-index:11",
+    "border:none",
+    "border-radius:4px",
+    "background:rgba(0,0,0,0.6)",
+    "color:white",
+    "font-size:0.9rem",
+    "line-height:1",
+    "padding:3px 5px",
+    "cursor:pointer",
+  ].join(";");
+
+  button.addEventListener("click", async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    button.disabled = true;
+    button.textContent = "...";
+    const ok = await reportVideo(videoInfo);
+    button.textContent = ok ? "\u2705" : "\u274C";
+    setTimeout(() => {
+      if (button.isConnected) button.textContent = "\u{1F6A9}";
+      button.disabled = false;
+    }, 2000);
+  });
+
+  thumb.appendChild(button);
+}
+
+/**
+ * Sends a "this video is distracting" report to the backend, which stores
+ * it in Supabase for the next batch retrain.
+ */
+async function reportVideo({ videoId, title, description, tags, topicCategories, channelName, channelId }) {
+  try {
+    const response = await axios.post(
+      BACKEND_URL + "/report",
+      {
+        videoId,
+        title,
+        description,
+        tags,
+        topic_categories: topicCategories,
+        channel_name: channelName,
+        channel_id: channelId,
+      },
+      { headers: { "Content-Type": "application/json" } }
+    );
+    console.log("[LE] Report submitted:", response.data);
+    return true;
+  } catch (error) {
+    console.error("[LE] Failed to submit report:", error);
+    return false;
   }
 }
 
